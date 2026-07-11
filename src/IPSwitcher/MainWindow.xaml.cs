@@ -216,11 +216,6 @@ public partial class MainWindow : Window
 
     private void MainWindow_OnStateChanged(object? sender, EventArgs e)
     {
-        if (WindowState == WindowState.Minimized)
-        {
-            Hide();
-            ShowTrayNotificationIfFirstTime();
-        }
     }
 
     private void MainWindow_OnClosing(object? sender, CancelEventArgs e)
