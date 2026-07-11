@@ -1,0 +1,301 @@
+﻿<Window x:Class="IPSwitcher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:IPSwitcher.ViewModels"
+        mc:Ignorable="d"
+        Title="IPSwitcher — 网络配置切换工具"
+        Height="680" Width="1000"
+        MinHeight="600" MinWidth="880"
+        Background="Transparent"
+        WindowStyle="SingleBorderWindow"
+        WindowStartupLocation="CenterScreen"
+        Loaded="MainWindow_OnLoaded"
+        StateChanged="MainWindow_OnStateChanged"
+        Closing="MainWindow_OnClosing">
+    <Grid>
+        <Border Background="{DynamicResource WindowBackgroundBrush}">
+            <Grid Margin="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="IPSwitcher" Style="{StaticResource TitleText}" VerticalAlignment="Center"/>
+                        <TextBlock Text="网络配置切换工具" Style="{StaticResource SecondaryText}"
+                                   Margin="12,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="主题：" Style="{StaticResource FieldLabel}" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="ThemeComboBox" Width="120" Style="{StaticResource FluentComboBox}"
+                                  SelectionChanged="ThemeComboBox_OnSelectionChanged">
+                            <ComboBoxItem Content="跟随系统" Tag="{x:Static vm:ThemeTag.System}"/>
+                            <ComboBoxItem Content="浅色" Tag="{x:Static vm:ThemeTag.Light}"/>
+                            <ComboBoxItem Content="深色" Tag="{x:Static vm:ThemeTag.Dark}"/>
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="配置文件" Style="{StaticResource HeadingText}" Margin="0,0,0,8"/>
+
+                        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0">
+                            <ListBox x:Name="ProfileListBox"
+                                     Style="{StaticResource FluentListBox}"
+                                     ItemContainerStyle="{StaticResource ProfileListItem}"
+                                     ItemsSource="{Binding Profiles}"
+                                     SelectedItem="{Binding SelectedProfile, Mode=TwoWay}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
+                                                       Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                            <TextBlock Text="{Binding Summary}" FontSize="11" Margin="0,2,0,0"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="+ 新建" Style="{StaticResource FluentButton}" Margin="0,0,8,0"
+                                    Command="{Binding AddProfileCommand}"/>
+                            <Button Content="- 删除" Style="{StaticResource DangerButton}" Margin="0,0,8,0"
+                                    Command="{Binding DeleteProfileCommand}"/>
+                            <Button Content="保存" Style="{StaticResource AccentButton}"
+                                    Command="{Binding SaveProfileCommand}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="网络适配器" Style="{StaticResource HeadingText}"
+                                                   VerticalAlignment="Center"/>
+                                        <Button Grid.Column="2" Content="刷新" Style="{StaticResource FluentButton}"
+                                                Command="{Binding RefreshAdaptersCommand}"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox Style="{StaticResource FluentComboBox}"
+                                                  ItemsSource="{Binding Adapters}"
+                                                  SelectedItem="{Binding SelectedAdapter, Mode=TwoWay}"
+                                                  DisplayMemberPath="DisplayName"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="状态：" Style="{StaticResource SecondaryText}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding SelectedAdapter.StatusText}"
+                                                   Style="{StaticResource SecondaryText}" Margin="6,0,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="配置详情" Style="{StaticResource HeadingText}" Margin="0,0,0,12"/>
+
+                                    <Grid IsEnabled="{Binding SelectedProfile, Converter={x:Static vm:NullToBoolConverter.Instance}}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="名称：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Grid.Row="0" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <CheckBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                                  Style="{StaticResource FluentCheckBox}"
+                                                  Content="启用 DHCP（自动获取 IP/DNS）"
+                                                  IsChecked="{Binding SelectedProfile.UseDhcp, Mode=TwoWay}"
+                                                  Margin="0,0,0,14"/>
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="网络类别：" Style="{StaticResource FieldLabel}"/>
+                                        <ComboBox Grid.Row="2" Grid.Column="1" Style="{StaticResource FluentComboBox}"
+                                                  SelectedIndex="{Binding SelectedProfile.NetworkCategory, Mode=TwoWay, Converter={x:Static vm:NetworkCategoryToIndexConverter.Instance}}"
+                                                  Margin="0,0,0,10">
+                                            <ComboBoxItem Content="不修改"/>
+                                            <ComboBoxItem Content="公用网络"/>
+                                            <ComboBoxItem Content="专用网络"/>
+                                        </ComboBox>
+
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="IP 地址：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Grid.Row="3" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.IpAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding IsStaticFieldsEnabled}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="子网掩码：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Grid.Row="4" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.SubnetMask, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding IsStaticFieldsEnabled}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="网关：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Grid.Row="5" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.Gateway, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding IsStaticFieldsEnabled}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="首选 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Grid.Row="6" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.PrimaryDns, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding IsStaticFieldsEnabled}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="7" Grid.Column="0" Text="备用 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Grid.Row="7" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.SecondaryDns, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding IsStaticFieldsEnabled}"
+                                                 Margin="0,0,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="当前实际配置" Style="{StaticResource HeadingText}" Margin="0,0,0,12"/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="来源：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CurrentConfig.SourceText}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="网络类别：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding CurrentConfig.NetworkCategory}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="IP 地址：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CurrentConfig.IpAddress}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="子网掩码：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding CurrentConfig.SubnetMask}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="网关：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CurrentConfig.Gateway}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="2" Grid.Column="2" Text="首选 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding CurrentConfig.PrimaryDns}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="备用 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CurrentConfig.SecondaryDns}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
+                <Grid Grid.Row="2" Margin="0,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <WrapPanel Grid.Column="0" Orientation="Horizontal">
+                        <Button Content="导入配置" Style="{StaticResource FluentButton}" Margin="0,0,8,0"
+                                Command="{Binding ImportProfilesCommand}"/>
+                        <Button Content="导出配置" Style="{StaticResource FluentButton}" Margin="0,0,8,0"
+                                Command="{Binding ExportProfilesCommand}"/>
+                    </WrapPanel>
+
+                    <WrapPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="ApplyButton" Content="应用到当前适配器" Style="{StaticResource AccentButton}"
+                                Padding="24,10" FontWeight="SemiBold"
+                                Command="{Binding ApplyProfileCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={x:Static vm:InverseBoolConverter.Instance}}"/>
+                    </WrapPanel>
+                </Grid>
+
+                <Border Grid.Row="3" Background="{DynamicResource CardBackgroundAltBrush}"
+                        CornerRadius="4" Padding="12,8" Margin="0,12,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="●" Foreground="{DynamicResource SuccessBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding StatusText}" Style="{StaticResource SecondaryText}"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <ProgressBar Grid.Column="2" Width="100" Height="3" IsIndeterminate="True"
+                                     Visibility="{Binding IsBusy, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"
+                                     VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
