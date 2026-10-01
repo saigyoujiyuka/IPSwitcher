@@ -58,8 +58,6 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    public bool IsStaticFieldsEnabled => SelectedProfile is null || !SelectedProfile.UseDhcp;
-
     public MainViewModel(
         IProfileRepository profileRepo,
         ISettingsStore settingsStore,
@@ -111,7 +109,7 @@ public partial class MainViewModel : ObservableObject
             var seed = new NetworkProfile
             {
                 Name = "新配置",
-                UseDhcp = true,
+                Ipv4Mode = Ipv4Mode.Automatic,
                 SubnetMask = "255.255.255.0",
             };
             var vm = new ProfileViewModel(seed);
@@ -173,31 +171,12 @@ public partial class MainViewModel : ObservableObject
         RefreshCurrentConfig();
     }
 
-    private ProfileViewModel? _subscribedProfile;
-
     partial void OnSelectedProfileChanged(ProfileViewModel? value)
     {
-        if (_subscribedProfile is not null)
-        {
-            _subscribedProfile.PropertyChanged -= OnSelectedProfileItemChanged;
-            _subscribedProfile = null;
-        }
-
         if (value is not null)
         {
             _settings.LastProfileId = value.Id;
             _settingsStore.Save(_settings);
-            value.PropertyChanged += OnSelectedProfileItemChanged;
-            _subscribedProfile = value;
-        }
-        OnPropertyChanged(nameof(IsStaticFieldsEnabled));
-    }
-
-    private void OnSelectedProfileItemChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(ProfileViewModel.UseDhcp))
-        {
-            OnPropertyChanged(nameof(IsStaticFieldsEnabled));
         }
     }
 
@@ -207,7 +186,7 @@ public partial class MainViewModel : ObservableObject
         var seed = new NetworkProfile
         {
             Name = $"配置 {Profiles.Count + 1}",
-            UseDhcp = true,
+            Ipv4Mode = Ipv4Mode.Automatic,
             SubnetMask = "255.255.255.0",
         };
         var vm = new ProfileViewModel(seed);
@@ -246,7 +225,7 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        if (!SelectedProfile.UseDhcp)
+        if (SelectedProfile.Ipv4Mode == Ipv4Mode.Manual)
         {
             if (!IPv4Validator.IsValidAddress(SelectedProfile.IpAddress))
             {
@@ -279,6 +258,12 @@ public partial class MainViewModel : ObservableObject
                 StatusText = "保存失败：设置备用 DNS 需同时设置首选 DNS。";
                 return;
             }
+            if (!string.IsNullOrWhiteSpace(SelectedProfile.Gateway) &&
+                string.IsNullOrWhiteSpace(SelectedProfile.PrimaryDns))
+            {
+                StatusText = "保存失败：配置网关时必须填写首选 DNS。";
+                return;
+            }
 
             var dohError =
                 ValidateDoh(SelectedProfile.PrimaryDns, SelectedProfile.PrimaryDnsDoh,
@@ -292,9 +277,65 @@ public partial class MainViewModel : ObservableObject
             }
         }
 
+        // IPv6 is independent of the IPv4 DHCP switch, so it is validated in both modes.
+        var ipv6Error = ValidateIpv6(SelectedProfile);
+        if (ipv6Error is not null)
+        {
+            StatusText = $"保存失败：{ipv6Error}";
+            return;
+        }
+
         SelectedProfile.WriteBackToSource();
         PersistProfiles();
         StatusText = $"配置「{SelectedProfile.Name}」已保存。";
+    }
+
+    private static string? ValidateIpv6(ProfileViewModel profile)
+    {
+        if (string.IsNullOrWhiteSpace(profile.Ipv6PrimaryDns) &&
+            !string.IsNullOrWhiteSpace(profile.Ipv6SecondaryDns))
+        {
+            return "设置备用 IPv6 DNS 需同时设置首选 IPv6 DNS。";
+        }
+
+        if (!Ipv6Validator.IsValidOptionalScopedAddress(profile.Ipv6PrimaryDns))
+        {
+            return "首选 IPv6 DNS 格式无效。";
+        }
+
+        if (!Ipv6Validator.IsValidOptionalScopedAddress(profile.Ipv6SecondaryDns))
+        {
+            return "备用 IPv6 DNS 格式无效。";
+        }
+
+        if (profile.Ipv6Mode == Ipv6Mode.Manual)
+        {
+            if (!Ipv6Validator.IsValidAddress(profile.Ipv6Address))
+            {
+                return "手动模式下 IPv6 地址格式无效。";
+            }
+
+            if (!Ipv6Validator.TryParsePrefixLength(profile.Ipv6PrefixLength, out _))
+            {
+                return "手动模式下 IPv6 子网前缀长度无效（需为 0-128）。";
+            }
+
+            if (!Ipv6Validator.IsValidOptionalScopedAddress(profile.Ipv6Gateway))
+            {
+                return "IPv6 网关格式无效。";
+            }
+
+            if (!string.IsNullOrWhiteSpace(profile.Ipv6Gateway) &&
+                string.IsNullOrWhiteSpace(profile.Ipv6PrimaryDns))
+            {
+                return "配置 IPv6 网关时必须填写首选 IPv6 DNS。";
+            }
+        }
+
+        return ValidateDoh(profile.Ipv6PrimaryDns, profile.Ipv6PrimaryDnsDoh,
+                   profile.Ipv6PrimaryDnsDohTemplate, "首选 IPv6") ??
+               ValidateDoh(profile.Ipv6SecondaryDns, profile.Ipv6SecondaryDnsDoh,
+                   profile.Ipv6SecondaryDnsDohTemplate, "备用 IPv6");
     }
 
     /// <summary>Same rules the Windows Settings dialog applies to a DoH entry; returns an error text or <c>null</c>.</summary>

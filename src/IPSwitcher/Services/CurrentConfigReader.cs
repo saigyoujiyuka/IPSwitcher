@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using IPSwitcher.Models;
@@ -20,6 +21,20 @@ public sealed class CurrentConfig
     public string PrimaryDnsDoh { get; init; } = "—";
 
     public string SecondaryDnsDoh { get; init; } = "—";
+
+    public string Ipv6Address { get; init; } = "—";
+
+    public string Ipv6Gateway { get; init; } = "—";
+
+    public string Ipv6AddressSource { get; init; } = "—";
+
+    public string Ipv6PrimaryDns { get; init; } = "—";
+
+    public string Ipv6SecondaryDns { get; init; } = "—";
+
+    public string Ipv6PrimaryDnsDoh { get; init; } = "—";
+
+    public string Ipv6SecondaryDnsDoh { get; init; } = "—";
 
     public bool IsDhcp { get; init; }
 
@@ -107,6 +122,52 @@ public sealed class CurrentConfigReader
             doh2 = DohModeInfo.StateText(state.Mode, state.AllowFallback);
         }
 
+        // IPv6
+        string ipv6 = "—";
+        var ipv6Addresses = props.UnicastAddresses
+            .Where(a => a.Address.AddressFamily == AddressFamily.InterNetworkV6)
+            .ToList();
+
+        var preferredV6 = ipv6Addresses.FirstOrDefault(a => IsReportableIpv6(a.Address)) ?? ipv6Addresses.FirstOrDefault();
+        if (preferredV6 is not null)
+        {
+            ipv6 = $"{preferredV6.Address}/{preferredV6.PrefixLength}";
+        }
+
+        string gw6 = "—";
+        foreach (var g in props.GatewayAddresses)
+        {
+            if (g.Address.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                gw6 = g.Address.ToString();
+                break;
+            }
+        }
+
+        var dns6List = props.DnsAddresses
+            .Where(d => d.AddressFamily == AddressFamily.InterNetworkV6)
+            .Select(d => d.ToString())
+            .ToList();
+
+        string dns61 = dns6List.Count > 0 ? dns6List[0] : "—";
+        string dns62 = dns6List.Count > 1 ? dns6List[1] : "—";
+
+        string doh61 = "—";
+        if (dns6List.Count > 0)
+        {
+            var state = _dohSettings.Read(nic.Id, dns6List[0]);
+            doh61 = DohModeInfo.StateText(state.Mode, state.AllowFallback);
+        }
+
+        string doh62 = "—";
+        if (dns6List.Count > 1)
+        {
+            var state = _dohSettings.Read(nic.Id, dns6List[1]);
+            doh62 = DohModeInfo.StateText(state.Mode, state.AllowFallback);
+        }
+
+        var ipv6Source = ReadIpv6AddressSource(nic.Id);
+
         return new CurrentConfig
         {
             IpAddress = ip,
@@ -116,9 +177,48 @@ public sealed class CurrentConfigReader
             SecondaryDns = dns2,
             PrimaryDnsDoh = doh1,
             SecondaryDnsDoh = doh2,
+            Ipv6Address = ipv6,
+            Ipv6Gateway = gw6,
+            Ipv6AddressSource = ipv6Source,
+            Ipv6PrimaryDns = dns61,
+            Ipv6SecondaryDns = dns62,
+            Ipv6PrimaryDnsDoh = doh61,
+            Ipv6SecondaryDnsDoh = doh62,
             IsDhcp = isDhcp,
             NetworkCategory = category,
         };
+    }
+
+    /// <summary>Global unicast addresses are worth showing; link-local ones are a fallback.</summary>
+    private static bool IsReportableIpv6(IPAddress address) =>
+        !address.IsIPv6LinkLocal &&
+        !address.IsIPv6Multicast &&
+        !address.IsIPv6Teredo &&
+        !address.IsIPv6SiteLocal;
+
+    /// <summary>
+    /// Reads <c>Tcpip6\Parameters\Interfaces\{guid}\EnableDHCP</c>: 1 means the address is obtained
+    /// automatically (DHCPv6 / router advertisements), 0 means it is statically configured.
+    /// </summary>
+    private static string ReadIpv6AddressSource(string interfaceId)
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                $@"SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters\Interfaces\{interfaceId}");
+
+            var value = key?.GetValue("EnableDHCP");
+            return value switch
+            {
+                int i => i != 0 ? "自动（DHCPv6）" : "静态",
+                long l => l != 0 ? "自动（DHCPv6）" : "静态",
+                _ => "—",
+            };
+        }
+        catch
+        {
+            return "—";
+        }
     }
 
     private static string ReadNetworkCategory(string adapterName)

@@ -137,3 +137,69 @@ public sealed class DohModeToIndexConverter : IValueConverter
         return IPSwitcher.Models.DohMode.Off;
     }
 }
+
+public sealed class Ipv4ModeToIndexConverter : IValueConverter
+{
+    public static readonly Ipv4ModeToIndexConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is IPSwitcher.Models.Ipv4Mode m)
+        {
+            return m switch
+            {
+                IPSwitcher.Models.Ipv4Mode.Automatic => 1,
+                IPSwitcher.Models.Ipv4Mode.Manual => 2,
+                _ => 0,
+            };
+        }
+        return 0;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is int i)
+        {
+            return i switch
+            {
+                1 => IPSwitcher.Models.Ipv4Mode.Automatic,
+                2 => IPSwitcher.Models.Ipv4Mode.Manual,
+                _ => IPSwitcher.Models.Ipv4Mode.Unchanged,
+            };
+        }
+        return IPSwitcher.Models.Ipv4Mode.Unchanged;
+    }
+}
+
+public sealed class Ipv6ModeToIndexConverter : IValueConverter
+{
+    public static readonly Ipv6ModeToIndexConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is IPSwitcher.Models.Ipv6Mode m)
+        {
+            return m switch
+            {
+                IPSwitcher.Models.Ipv6Mode.Automatic => 1,
+                IPSwitcher.Models.Ipv6Mode.Manual => 2,
+                _ => 0,
+            };
+        }
+        return 0;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is int i)
+        {
+            return i switch
+            {
+                1 => IPSwitcher.Models.Ipv6Mode.Automatic,
+                2 => IPSwitcher.Models.Ipv6Mode.Manual,
+                _ => IPSwitcher.Models.Ipv6Mode.Unchanged,
+            };
+        }
+        return IPSwitcher.Models.Ipv6Mode.Unchanged;
+    }
+}

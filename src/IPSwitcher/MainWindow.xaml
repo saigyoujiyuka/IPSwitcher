@@ -152,6 +152,16 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="名称：" Style="{StaticResource FieldLabel}"/>
@@ -159,14 +169,8 @@
                                                  Text="{Binding SelectedProfile.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  Margin="0,0,0,10"/>
 
-                                        <CheckBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                                  Style="{StaticResource FluentCheckBox}"
-                                                  Content="启用 DHCP（自动获取 IP/DNS）"
-                                                  IsChecked="{Binding SelectedProfile.UseDhcp, Mode=TwoWay}"
-                                                  Margin="0,0,0,14"/>
-
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="网络类别：" Style="{StaticResource FieldLabel}"/>
-                                        <ComboBox Grid.Row="2" Grid.Column="1" Style="{StaticResource FluentComboBox}"
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="网络类别：" Style="{StaticResource FieldLabel}"/>
+                                        <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource FluentComboBox}"
                                                   SelectedIndex="{Binding SelectedProfile.NetworkCategory, Mode=TwoWay, Converter={x:Static vm:NetworkCategoryToIndexConverter.Instance}}"
                                                   Margin="0,0,0,10">
                                             <ComboBoxItem Content="不修改"/>
@@ -174,31 +178,45 @@
                                             <ComboBoxItem Content="专用网络"/>
                                         </ComboBox>
 
-                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="IP 地址：" Style="{StaticResource FieldLabel}"/>
-                                        <TextBox Grid.Row="3" Grid.Column="1" Style="{StaticResource FluentTextBox}"
-                                                 Text="{Binding SelectedProfile.IpAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding IsStaticFieldsEnabled}"
-                                                 Margin="0,0,0,10"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Text="IPv4"
+                                                   Style="{StaticResource HeadingText}" Margin="0,6,0,10"/>
 
-                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="子网掩码：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="IPv4 地址模式：" Style="{StaticResource FieldLabel}"/>
+                                        <ComboBox Grid.Row="3" Grid.Column="1" Style="{StaticResource FluentComboBox}"
+                                                  SelectedIndex="{Binding SelectedProfile.Ipv4Mode, Mode=TwoWay, Converter={x:Static vm:Ipv4ModeToIndexConverter.Instance}}"
+                                                  Margin="0,0,0,10">
+                                            <ComboBoxItem Content="不修改"/>
+                                            <ComboBoxItem Content="自动（DHCP）"/>
+                                            <ComboBoxItem Content="手动（静态）"/>
+                                        </ComboBox>
+
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="IP 地址：" Style="{StaticResource FieldLabel}"
+                                                   Visibility="{Binding SelectedProfile.IsIpv4ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"/>
                                         <TextBox Grid.Row="4" Grid.Column="1" Style="{StaticResource FluentTextBox}"
-                                                 Text="{Binding SelectedProfile.SubnetMask, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding IsStaticFieldsEnabled}"
+                                                 Text="{Binding SelectedProfile.IpAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Visibility="{Binding SelectedProfile.IsIpv4ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"
                                                  Margin="0,0,0,10"/>
 
-                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="网关：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="子网掩码：" Style="{StaticResource FieldLabel}"
+                                                   Visibility="{Binding SelectedProfile.IsIpv4ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"/>
                                         <TextBox Grid.Row="5" Grid.Column="1" Style="{StaticResource FluentTextBox}"
-                                                 Text="{Binding SelectedProfile.Gateway, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding IsStaticFieldsEnabled}"
+                                                 Text="{Binding SelectedProfile.SubnetMask, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Visibility="{Binding SelectedProfile.IsIpv4ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"
                                                  Margin="0,0,0,10"/>
 
-                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="首选 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="网关：" Style="{StaticResource FieldLabel}"
+                                                   Visibility="{Binding SelectedProfile.IsIpv4ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"/>
                                         <TextBox Grid.Row="6" Grid.Column="1" Style="{StaticResource FluentTextBox}"
-                                                 Text="{Binding SelectedProfile.PrimaryDns, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding IsStaticFieldsEnabled}"
+                                                 Text="{Binding SelectedProfile.Gateway, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Visibility="{Binding SelectedProfile.IsIpv4ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"
                                                  Margin="0,0,0,10"/>
 
-                                        <StackPanel Grid.Row="7" Grid.Column="1" Margin="0,0,0,14">
+                                        <TextBlock Grid.Row="7" Grid.Column="0" Text="首选 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Grid.Row="7" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.PrimaryDns, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <StackPanel Grid.Row="8" Grid.Column="1" Margin="0,0,0,14">
                                             <TextBlock Text="DNS over HTTPS" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
                                             <ComboBox Style="{StaticResource FluentComboBox}"
                                                       IsEnabled="{Binding SelectedProfile.IsPrimaryDohEnabled}"
@@ -222,13 +240,12 @@
                                             </StackPanel>
                                         </StackPanel>
 
-                                        <TextBlock Grid.Row="8" Grid.Column="0" Text="备用 DNS：" Style="{StaticResource FieldLabel}"/>
-                                        <TextBox Grid.Row="8" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                        <TextBlock Grid.Row="9" Grid.Column="0" Text="备用 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Grid.Row="9" Grid.Column="1" Style="{StaticResource FluentTextBox}"
                                                  Text="{Binding SelectedProfile.SecondaryDns, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 IsEnabled="{Binding IsStaticFieldsEnabled}"
                                                  Margin="0,0,0,10"/>
 
-                                        <StackPanel Grid.Row="9" Grid.Column="1">
+                                        <StackPanel Grid.Row="10" Grid.Column="1">
                                             <TextBlock Text="DNS over HTTPS" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
                                             <ComboBox Style="{StaticResource FluentComboBox}"
                                                       IsEnabled="{Binding SelectedProfile.IsSecondaryDohEnabled}"
@@ -251,6 +268,97 @@
                                                           Margin="0,10,0,0"/>
                                             </StackPanel>
                                         </StackPanel>
+
+                                        <TextBlock Grid.Row="11" Grid.Column="0" Grid.ColumnSpan="2" Text="IPv6"
+                                                   Style="{StaticResource HeadingText}" Margin="0,6,0,10"/>
+
+                                        <TextBlock Grid.Row="12" Grid.Column="0" Text="IPv6 地址模式：" Style="{StaticResource FieldLabel}"/>
+                                        <ComboBox Grid.Row="12" Grid.Column="1" Style="{StaticResource FluentComboBox}"
+                                                  SelectedIndex="{Binding SelectedProfile.Ipv6Mode, Mode=TwoWay, Converter={x:Static vm:Ipv6ModeToIndexConverter.Instance}}"
+                                                  Margin="0,0,0,10">
+                                            <ComboBoxItem Content="不修改"/>
+                                            <ComboBoxItem Content="自动（DHCPv6）"/>
+                                            <ComboBoxItem Content="手动（静态）"/>
+                                        </ComboBox>
+
+                                        <TextBlock Grid.Row="13" Grid.Column="0" Text="IPv6 地址：" Style="{StaticResource FieldLabel}"
+                                                   Visibility="{Binding SelectedProfile.IsIpv6ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"/>
+                                        <TextBox Grid.Row="13" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.Ipv6Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Visibility="{Binding SelectedProfile.IsIpv6ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="14" Grid.Column="0" Text="子网前缀长度：" Style="{StaticResource FieldLabel}"
+                                                   Visibility="{Binding SelectedProfile.IsIpv6ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"/>
+                                        <TextBox Grid.Row="14" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.Ipv6PrefixLength, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Visibility="{Binding SelectedProfile.IsIpv6ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="15" Grid.Column="0" Text="IPv6 网关：" Style="{StaticResource FieldLabel}"
+                                                   Visibility="{Binding SelectedProfile.IsIpv6ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"/>
+                                        <TextBox Grid.Row="15" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.Ipv6Gateway, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Visibility="{Binding SelectedProfile.IsIpv6ManualFieldsEnabled, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="16" Grid.Column="0" Text="首选 IPv6 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Grid.Row="16" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.Ipv6PrimaryDns, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <StackPanel Grid.Row="17" Grid.Column="1" Margin="0,0,0,14">
+                                            <TextBlock Text="DNS over HTTPS" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                                            <ComboBox Style="{StaticResource FluentComboBox}"
+                                                      IsEnabled="{Binding SelectedProfile.IsIpv6PrimaryDohEnabled}"
+                                                      SelectedIndex="{Binding SelectedProfile.Ipv6PrimaryDnsDoh, Mode=TwoWay, Converter={x:Static vm:DohModeToIndexConverter.Instance}}">
+                                                <ComboBoxItem Content="关"/>
+                                                <ComboBoxItem Content="开（自动模板）"/>
+                                                <ComboBoxItem Content="开（手动模板）"/>
+                                            </ComboBox>
+
+                                            <StackPanel Visibility="{Binding SelectedProfile.IsIpv6PrimaryDohExpanded, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}">
+                                                <TextBlock Text="DNS over HTTPS 模板" Style="{StaticResource FieldLabel}" Margin="0,10,0,4"/>
+                                                <TextBox Style="{StaticResource FluentTextBox}"
+                                                         Text="{Binding SelectedProfile.Ipv6PrimaryDnsDohTemplate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         IsEnabled="{Binding SelectedProfile.IsIpv6PrimaryDohTemplateEnabled}"/>
+
+                                                <CheckBox Style="{StaticResource FluentCheckBox}"
+                                                          Content="失败时使用未加密请求"
+                                                          IsChecked="{Binding SelectedProfile.Ipv6PrimaryDnsDohAllowFallback, Mode=TwoWay}"
+                                                          IsEnabled="{Binding SelectedProfile.IsIpv6PrimaryDohEnabled}"
+                                                          Margin="0,10,0,0"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Row="18" Grid.Column="0" Text="备用 IPv6 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox Grid.Row="18" Grid.Column="1" Style="{StaticResource FluentTextBox}"
+                                                 Text="{Binding SelectedProfile.Ipv6SecondaryDns, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <StackPanel Grid.Row="19" Grid.Column="1">
+                                            <TextBlock Text="DNS over HTTPS" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                                            <ComboBox Style="{StaticResource FluentComboBox}"
+                                                      IsEnabled="{Binding SelectedProfile.IsIpv6SecondaryDohEnabled}"
+                                                      SelectedIndex="{Binding SelectedProfile.Ipv6SecondaryDnsDoh, Mode=TwoWay, Converter={x:Static vm:DohModeToIndexConverter.Instance}}">
+                                                <ComboBoxItem Content="关"/>
+                                                <ComboBoxItem Content="开（自动模板）"/>
+                                                <ComboBoxItem Content="开（手动模板）"/>
+                                            </ComboBox>
+
+                                            <StackPanel Visibility="{Binding SelectedProfile.IsIpv6SecondaryDohExpanded, Converter={x:Static vm:BoolToVisibilityConverter.Instance}}">
+                                                <TextBlock Text="DNS over HTTPS 模板" Style="{StaticResource FieldLabel}" Margin="0,10,0,4"/>
+                                                <TextBox Style="{StaticResource FluentTextBox}"
+                                                         Text="{Binding SelectedProfile.Ipv6SecondaryDnsDohTemplate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         IsEnabled="{Binding SelectedProfile.IsIpv6SecondaryDohTemplateEnabled}"/>
+
+                                                <CheckBox Style="{StaticResource FluentCheckBox}"
+                                                          Content="失败时使用未加密请求"
+                                                          IsChecked="{Binding SelectedProfile.Ipv6SecondaryDnsDohAllowFallback, Mode=TwoWay}"
+                                                          IsEnabled="{Binding SelectedProfile.IsIpv6SecondaryDohEnabled}"
+                                                          Margin="0,10,0,0"/>
+                                            </StackPanel>
+                                        </StackPanel>
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -267,6 +375,10 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
@@ -308,6 +420,34 @@
 
                                         <TextBlock Grid.Row="4" Grid.Column="2" Text="备用 DNS DoH：" Style="{StaticResource FieldLabel}"/>
                                         <TextBlock Grid.Row="4" Grid.Column="3" Text="{Binding CurrentConfig.SecondaryDnsDoh}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="IPv6 地址：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding CurrentConfig.Ipv6Address}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="5" Grid.Column="2" Text="IPv6 网关：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="3" Text="{Binding CurrentConfig.Ipv6Gateway}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="IPv6 来源：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding CurrentConfig.Ipv6AddressSource}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="7" Grid.Column="0" Text="首选 IPv6 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding CurrentConfig.Ipv6PrimaryDns}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="7" Grid.Column="2" Text="备用 IPv6 DNS：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="7" Grid.Column="3" Text="{Binding CurrentConfig.Ipv6SecondaryDns}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="8" Grid.Column="0" Text="首选 IPv6 DoH：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding CurrentConfig.Ipv6PrimaryDnsDoh}"
+                                                   Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
+
+                                        <TextBlock Grid.Row="8" Grid.Column="2" Text="备用 IPv6 DoH：" Style="{StaticResource FieldLabel}"/>
+                                        <TextBlock Grid.Row="8" Grid.Column="3" Text="{Binding CurrentConfig.Ipv6SecondaryDnsDoh}"
                                                    Style="{StaticResource PrimaryText}" Margin="0,0,0,10"/>
                                     </Grid>
                                 </StackPanel>
