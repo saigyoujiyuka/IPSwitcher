@@ -20,6 +20,13 @@ public sealed class NetworkConfigResult
 
 public sealed class NetworkConfigService
 {
+    private readonly DohSettingsService _dohSettings;
+
+    public NetworkConfigService(DohSettingsService dohSettings)
+    {
+        _dohSettings = dohSettings;
+    }
+
     public async Task<NetworkConfigResult> ApplyAsync(string adapterName, NetworkProfile profile, CancellationToken ct = default)
     {
         var logs = new List<string>();
@@ -56,6 +63,12 @@ public sealed class NetworkConfigService
             }
         }
 
+        var dohResult = await ApplyDohAsync(adapterName, profile, logs, ct);
+        if (!dohResult.Success)
+        {
+            return NetworkConfigResult.Fail($"DNS over HTTPS 设置失败：{dohResult.Error}", logs);
+        }
+
         if (profile.NetworkCategory.HasValue)
         {
             var rc2 = await SetNetworkCategoryAsync(adapterName, profile.NetworkCategory.Value, ct);
@@ -68,6 +81,115 @@ public sealed class NetworkConfigService
 
         var mode = profile.UseDhcp ? "DHCP 自动获取" : $"静态配置「{profile.Name}」";
         return NetworkConfigResult.Ok($"已将「{adapterName}」切换为 {mode}。", logs);
+    }
+
+    /// <summary>
+    /// Mirrors the Windows Settings behaviour for "DNS over HTTPS": every existing DoH entry of the
+    /// interface is dropped first (the Settings app does the same whenever the DNS list is rewritten)
+    /// and then one entry per configured DNS server is written.
+    /// </summary>
+    private async Task<DohApplyResult> ApplyDohAsync(string adapterName, NetworkProfile profile, List<string> logs, CancellationToken ct)
+    {
+        logs.Add("> DoH（DNS over HTTPS）");
+
+        if (!DohSettingsService.IsSupported)
+        {
+            if (!profile.UseDhcp && DohServers(profile).Any(s => s.Mode != DohMode.Off))
+            {
+                return DohApplyResult.Fail(
+                    "当前系统不支持 DNS over HTTPS（需要 Windows 11 / Windows Server 2022 及以上），请将该配置的 DoH 设为「关」。", logs);
+            }
+
+            logs.Add("  当前系统不支持 DoH，已跳过");
+            return DohApplyResult.Ok(logs);
+        }
+
+        var interfaceId = DohSettingsService.GetInterfaceId(adapterName);
+        if (string.IsNullOrWhiteSpace(interfaceId))
+        {
+            if (!profile.UseDhcp && DohServers(profile).Any(s => s.Mode != DohMode.Off))
+            {
+                return DohApplyResult.Fail($"未找到适配器「{adapterName}」对应的接口标识。", logs);
+            }
+
+            logs.Add("  未找到适配器对应的接口标识，已跳过 DoH");
+            return DohApplyResult.Ok(logs);
+        }
+
+        var cleared = _dohSettings.ClearInterface(interfaceId);
+        logs.AddRange(cleared.Logs);
+        if (!cleared.Success)
+        {
+            return cleared;
+        }
+
+        if (profile.UseDhcp)
+        {
+            logs.Add("  DHCP 模式：不保留 DoH 设置");
+        }
+        else
+        {
+            foreach (var server in DohServers(profile))
+            {
+                if (server.Mode == DohMode.Off)
+                {
+                    logs.Add($"  {server.Address}：DoH 关");
+                    continue;
+                }
+
+                if (server.Mode == DohMode.Manual && !DohSettingsService.IsValidTemplate(server.Template))
+                {
+                    return DohApplyResult.Fail(
+                        $"{server.Address} 的 DoH 模板无效，需为 https:// 开头的完整地址。", logs);
+                }
+
+                if (server.Mode == DohMode.Auto &&
+                    _dohSettings.TryGetKnownTemplate(server.Address) is null)
+                {
+                    logs.Add($"  (警告：系统未内置 {server.Address} 的 DoH 模板，自动模板可能不生效；" +
+                             "请改用「开（手动模板）」)");
+                }
+
+                var applied = _dohSettings.Apply(
+                    interfaceId, server.Address, server.Mode, server.Template, server.AllowFallback);
+                logs.AddRange(applied.Logs);
+                if (!applied.Success)
+                {
+                    return applied;
+                }
+            }
+        }
+
+        // Make the DNS client pick the new settings up immediately instead of at the next network change.
+        var refresh = await RunPowerShellAsync("Register-DnsClient; Clear-DnsClientCache", ct);
+        logs.AddRange(refresh.Logs);
+        if (!refresh.Success)
+        {
+            logs.Add($"(警告：刷新 DNS 客户端失败：{refresh.Error})");
+        }
+
+        return DohApplyResult.Ok(logs);
+    }
+
+    private static IEnumerable<(string Address, DohMode Mode, string? Template, bool AllowFallback)> DohServers(NetworkProfile profile)
+    {
+        if (!string.IsNullOrWhiteSpace(profile.PrimaryDns))
+        {
+            yield return (
+                profile.PrimaryDns.Trim(),
+                profile.PrimaryDnsDoh,
+                profile.PrimaryDnsDohTemplate?.Trim(),
+                profile.PrimaryDnsDohAllowFallback);
+        }
+
+        if (!string.IsNullOrWhiteSpace(profile.SecondaryDns))
+        {
+            yield return (
+                profile.SecondaryDns.Trim(),
+                profile.SecondaryDnsDoh,
+                profile.SecondaryDnsDohTemplate?.Trim(),
+                profile.SecondaryDnsDohAllowFallback);
+        }
     }
 
     private async Task<NetworkConfigResult> ApplyStaticAsync(string adapterName, NetworkProfile profile, List<string> logs, CancellationToken ct)

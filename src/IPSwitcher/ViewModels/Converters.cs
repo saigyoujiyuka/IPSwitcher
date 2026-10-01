@@ -104,3 +104,36 @@ public sealed class NetworkCategoryToIndexConverter : IValueConverter
         return null;
     }
 }
+
+public sealed class DohModeToIndexConverter : IValueConverter
+{
+    public static readonly DohModeToIndexConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is IPSwitcher.Models.DohMode m)
+        {
+            return m switch
+            {
+                IPSwitcher.Models.DohMode.Auto => 1,
+                IPSwitcher.Models.DohMode.Manual => 2,
+                _ => 0,
+            };
+        }
+        return 0;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is int i)
+        {
+            return i switch
+            {
+                1 => IPSwitcher.Models.DohMode.Auto,
+                2 => IPSwitcher.Models.DohMode.Manual,
+                _ => IPSwitcher.Models.DohMode.Off,
+            };
+        }
+        return IPSwitcher.Models.DohMode.Off;
+    }
+}

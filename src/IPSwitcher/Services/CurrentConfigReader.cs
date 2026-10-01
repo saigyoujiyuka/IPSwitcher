@@ -17,6 +17,10 @@ public sealed class CurrentConfig
 
     public string SecondaryDns { get; init; } = "—";
 
+    public string PrimaryDnsDoh { get; init; } = "—";
+
+    public string SecondaryDnsDoh { get; init; } = "—";
+
     public bool IsDhcp { get; init; }
 
     public string NetworkCategory { get; init; } = "—";
@@ -28,6 +32,13 @@ public sealed class CurrentConfig
 
 public sealed class CurrentConfigReader
 {
+    private readonly DohSettingsService _dohSettings;
+
+    public CurrentConfigReader(DohSettingsService dohSettings)
+    {
+        _dohSettings = dohSettings;
+    }
+
     public CurrentConfig Read(string adapterName)
     {
         if (string.IsNullOrWhiteSpace(adapterName))
@@ -82,6 +93,20 @@ public sealed class CurrentConfigReader
 
         var category = ReadNetworkCategory(adapterName);
 
+        string doh1 = "—";
+        if (dnsList.Count > 0)
+        {
+            var state = _dohSettings.Read(nic.Id, dnsList[0]);
+            doh1 = DohModeInfo.StateText(state.Mode, state.AllowFallback);
+        }
+
+        string doh2 = "—";
+        if (dnsList.Count > 1)
+        {
+            var state = _dohSettings.Read(nic.Id, dnsList[1]);
+            doh2 = DohModeInfo.StateText(state.Mode, state.AllowFallback);
+        }
+
         return new CurrentConfig
         {
             IpAddress = ip,
@@ -89,6 +114,8 @@ public sealed class CurrentConfigReader
             Gateway = gw,
             PrimaryDns = dns1,
             SecondaryDns = dns2,
+            PrimaryDnsDoh = doh1,
+            SecondaryDnsDoh = doh2,
             IsDhcp = isDhcp,
             NetworkCategory = category,
         };

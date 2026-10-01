@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Windows;
 using IPSwitcher.Helpers;
 using IPSwitcher.Models;
@@ -49,8 +49,9 @@ public partial class App : System.Windows.Application
         var profileRepo = new JsonProfileRepository();
         var settingsStore = new JsonSettingsStore();
         var adapterService = new AdapterService();
-        var configService = new NetworkConfigService();
-        var configReader = new CurrentConfigReader();
+        var dohSettings = new DohSettingsService();
+        var configService = new NetworkConfigService(dohSettings);
+        var configReader = new CurrentConfigReader(dohSettings);
 
         MainVM = new MainViewModel(profileRepo, settingsStore, adapterService, configService, configReader);
         MainVM.Initialize();

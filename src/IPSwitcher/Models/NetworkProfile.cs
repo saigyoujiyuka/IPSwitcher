@@ -20,6 +20,18 @@ public sealed class NetworkProfile
 
     public string? SecondaryDns { get; set; }
 
+    public DohMode PrimaryDnsDoh { get; set; } = DohMode.Off;
+
+    public string? PrimaryDnsDohTemplate { get; set; }
+
+    public bool PrimaryDnsDohAllowFallback { get; set; }
+
+    public DohMode SecondaryDnsDoh { get; set; } = DohMode.Off;
+
+    public string? SecondaryDnsDohTemplate { get; set; }
+
+    public bool SecondaryDnsDohAllowFallback { get; set; }
+
     public NetworkCategory? NetworkCategory { get; set; }
 
     [JsonIgnore]
@@ -44,6 +56,12 @@ public sealed class NetworkProfile
                 {
                     parts.Add($"dns {PrimaryDns}");
                 }
+
+                var doh = DohModeInfo.SummaryTag(PrimaryDnsDoh);
+                if (doh.Length > 0)
+                {
+                    parts.Add(doh);
+                }
             }
 
             if (NetworkCategory.HasValue)
@@ -67,6 +85,12 @@ public sealed class NetworkProfile
             Gateway = Gateway,
             PrimaryDns = PrimaryDns,
             SecondaryDns = SecondaryDns,
+            PrimaryDnsDoh = PrimaryDnsDoh,
+            PrimaryDnsDohTemplate = PrimaryDnsDohTemplate,
+            PrimaryDnsDohAllowFallback = PrimaryDnsDohAllowFallback,
+            SecondaryDnsDoh = SecondaryDnsDoh,
+            SecondaryDnsDohTemplate = SecondaryDnsDohTemplate,
+            SecondaryDnsDohAllowFallback = SecondaryDnsDohAllowFallback,
             NetworkCategory = NetworkCategory,
         };
     }

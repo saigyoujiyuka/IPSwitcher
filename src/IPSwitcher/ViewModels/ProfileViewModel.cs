@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using IPSwitcher.Models;
+using IPSwitcher.Services;
 
 namespace IPSwitcher.ViewModels;
 
@@ -26,12 +27,46 @@ public partial class ProfileViewModel : ObservableObject
     private string? _primaryDns;
 
     [ObservableProperty]
+    private DohMode _primaryDnsDoh;
+
+    [ObservableProperty]
+    private string? _primaryDnsDohTemplate;
+
+    [ObservableProperty]
+    private bool _primaryDnsDohAllowFallback;
+
+    [ObservableProperty]
     private string? _secondaryDns;
+
+    [ObservableProperty]
+    private DohMode _secondaryDnsDoh;
+
+    [ObservableProperty]
+    private string? _secondaryDnsDohTemplate;
+
+    [ObservableProperty]
+    private bool _secondaryDnsDohAllowFallback;
 
     [ObservableProperty]
     private NetworkCategory? _networkCategory;
 
     public Guid Id => Source.Id;
+
+    /// <summary>The DoH dropdown is usable once a static DNS server address is present.</summary>
+    public bool IsPrimaryDohEnabled =>
+        !UseDhcp && !string.IsNullOrWhiteSpace(PrimaryDns) && DohSettingsService.IsSupported;
+
+    /// <summary>Template box and fallback switch follow the dropdown, as in Windows Settings.</summary>
+    public bool IsPrimaryDohExpanded => IsPrimaryDohEnabled && PrimaryDnsDoh != DohMode.Off;
+
+    public bool IsPrimaryDohTemplateEnabled => IsPrimaryDohExpanded && PrimaryDnsDoh == DohMode.Manual;
+
+    public bool IsSecondaryDohEnabled =>
+        !UseDhcp && !string.IsNullOrWhiteSpace(SecondaryDns) && DohSettingsService.IsSupported;
+
+    public bool IsSecondaryDohExpanded => IsSecondaryDohEnabled && SecondaryDnsDoh != DohMode.Off;
+
+    public bool IsSecondaryDohTemplateEnabled => IsSecondaryDohExpanded && SecondaryDnsDoh == DohMode.Manual;
 
     public string Summary
     {
@@ -54,6 +89,12 @@ public partial class ProfileViewModel : ObservableObject
                 {
                     parts.Add($"dns {PrimaryDns}");
                 }
+
+                var doh = DohModeInfo.SummaryTag(PrimaryDnsDoh);
+                if (doh.Length > 0)
+                {
+                    parts.Add(doh);
+                }
             }
 
             if (NetworkCategory.HasValue)
@@ -74,7 +115,13 @@ public partial class ProfileViewModel : ObservableObject
         _subnetMask = profile.SubnetMask;
         _gateway = profile.Gateway;
         _primaryDns = profile.PrimaryDns;
+        _primaryDnsDoh = profile.PrimaryDnsDoh;
+        _primaryDnsDohTemplate = profile.PrimaryDnsDohTemplate;
+        _primaryDnsDohAllowFallback = profile.PrimaryDnsDohAllowFallback;
         _secondaryDns = profile.SecondaryDns;
+        _secondaryDnsDoh = profile.SecondaryDnsDoh;
+        _secondaryDnsDohTemplate = profile.SecondaryDnsDohTemplate;
+        _secondaryDnsDohAllowFallback = profile.SecondaryDnsDohAllowFallback;
         _networkCategory = profile.NetworkCategory;
     }
 
@@ -86,7 +133,13 @@ public partial class ProfileViewModel : ObservableObject
         SubnetMask = Source.SubnetMask;
         Gateway = Source.Gateway;
         PrimaryDns = Source.PrimaryDns;
+        PrimaryDnsDoh = Source.PrimaryDnsDoh;
+        PrimaryDnsDohTemplate = Source.PrimaryDnsDohTemplate;
+        PrimaryDnsDohAllowFallback = Source.PrimaryDnsDohAllowFallback;
         SecondaryDns = Source.SecondaryDns;
+        SecondaryDnsDoh = Source.SecondaryDnsDoh;
+        SecondaryDnsDohTemplate = Source.SecondaryDnsDohTemplate;
+        SecondaryDnsDohAllowFallback = Source.SecondaryDnsDohAllowFallback;
         NetworkCategory = Source.NetworkCategory;
     }
 
@@ -98,8 +151,25 @@ public partial class ProfileViewModel : ObservableObject
         Source.SubnetMask = SubnetMask;
         Source.Gateway = Gateway;
         Source.PrimaryDns = PrimaryDns;
+        Source.PrimaryDnsDoh = PrimaryDnsDoh;
+        Source.PrimaryDnsDohTemplate = PrimaryDnsDohTemplate;
+        Source.PrimaryDnsDohAllowFallback = PrimaryDnsDohAllowFallback;
         Source.SecondaryDns = SecondaryDns;
+        Source.SecondaryDnsDoh = SecondaryDnsDoh;
+        Source.SecondaryDnsDohTemplate = SecondaryDnsDohTemplate;
+        Source.SecondaryDnsDohAllowFallback = SecondaryDnsDohAllowFallback;
         Source.NetworkCategory = NetworkCategory;
+    }
+
+    private void RaiseSummaryAndDohState()
+    {
+        OnPropertyChanged(nameof(Summary));
+        OnPropertyChanged(nameof(IsPrimaryDohEnabled));
+        OnPropertyChanged(nameof(IsPrimaryDohExpanded));
+        OnPropertyChanged(nameof(IsPrimaryDohTemplateEnabled));
+        OnPropertyChanged(nameof(IsSecondaryDohEnabled));
+        OnPropertyChanged(nameof(IsSecondaryDohExpanded));
+        OnPropertyChanged(nameof(IsSecondaryDohTemplateEnabled));
     }
 
     partial void OnNameChanged(string value)
@@ -111,7 +181,7 @@ public partial class ProfileViewModel : ObservableObject
     partial void OnUseDhcpChanged(bool value)
     {
         Source.UseDhcp = value;
-        OnPropertyChanged(nameof(Summary));
+        RaiseSummaryAndDohState();
     }
 
     partial void OnIpAddressChanged(string? value)
@@ -135,13 +205,45 @@ public partial class ProfileViewModel : ObservableObject
     partial void OnPrimaryDnsChanged(string? value)
     {
         Source.PrimaryDns = value;
-        OnPropertyChanged(nameof(Summary));
+        RaiseSummaryAndDohState();
+    }
+
+    partial void OnPrimaryDnsDohChanged(DohMode value)
+    {
+        Source.PrimaryDnsDoh = value;
+        RaiseSummaryAndDohState();
+    }
+
+    partial void OnPrimaryDnsDohTemplateChanged(string? value)
+    {
+        Source.PrimaryDnsDohTemplate = value;
+    }
+
+    partial void OnPrimaryDnsDohAllowFallbackChanged(bool value)
+    {
+        Source.PrimaryDnsDohAllowFallback = value;
     }
 
     partial void OnSecondaryDnsChanged(string? value)
     {
         Source.SecondaryDns = value;
-        OnPropertyChanged(nameof(Summary));
+        RaiseSummaryAndDohState();
+    }
+
+    partial void OnSecondaryDnsDohChanged(DohMode value)
+    {
+        Source.SecondaryDnsDoh = value;
+        RaiseSummaryAndDohState();
+    }
+
+    partial void OnSecondaryDnsDohTemplateChanged(string? value)
+    {
+        Source.SecondaryDnsDohTemplate = value;
+    }
+
+    partial void OnSecondaryDnsDohAllowFallbackChanged(bool value)
+    {
+        Source.SecondaryDnsDohAllowFallback = value;
     }
 
     partial void OnNetworkCategoryChanged(NetworkCategory? value)

@@ -279,11 +279,43 @@ public partial class MainViewModel : ObservableObject
                 StatusText = "保存失败：设置备用 DNS 需同时设置首选 DNS。";
                 return;
             }
+
+            var dohError =
+                ValidateDoh(SelectedProfile.PrimaryDns, SelectedProfile.PrimaryDnsDoh,
+                    SelectedProfile.PrimaryDnsDohTemplate, "首选") ??
+                ValidateDoh(SelectedProfile.SecondaryDns, SelectedProfile.SecondaryDnsDoh,
+                    SelectedProfile.SecondaryDnsDohTemplate, "备用");
+            if (dohError is not null)
+            {
+                StatusText = $"保存失败：{dohError}";
+                return;
+            }
         }
 
         SelectedProfile.WriteBackToSource();
         PersistProfiles();
         StatusText = $"配置「{SelectedProfile.Name}」已保存。";
+    }
+
+    /// <summary>Same rules the Windows Settings dialog applies to a DoH entry; returns an error text or <c>null</c>.</summary>
+    private static string? ValidateDoh(string? dns, DohMode mode, string? template, string label)
+    {
+        if (mode == DohMode.Off)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(dns))
+        {
+            return $"启用{label} DNS 的 DoH 前请先填写{label} DNS。";
+        }
+
+        if (mode == DohMode.Manual && !DohSettingsService.IsValidTemplate(template))
+        {
+            return $"{label} DNS 的 DoH 模板无效，需为 https:// 开头且带路径的完整地址。";
+        }
+
+        return null;
     }
 
     [RelayCommand]
